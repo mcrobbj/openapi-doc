@@ -1,1 +1,440 @@
+openapi: '3.0.3'
+info:
+  title: Customer
+  version: '1.0'
+servers:
+  - url: https://{environment}.api.server.test/v1
+    variables:
+      environment:
+        default: api.sit # SIT server
+        enum:
+          - api.dev # Development server
+          - api.sit # SIT server
+          - api.uat # UAT server
+          - api.ppe # PPE server
+  - url: https://api.server.test/v1 # Production server
+paths: 
+  /customer:
+    post:
+      summary: create a new customer
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          'application/x-www-form-urlencoded':
+            schema:
+                $ref: '#/components/schemas/customerReg'
+      responses:
+        '201':
+          description: Created
+        "401":
+          $ref: '#/components/responses/401Unauthorized'
+        "403":
+          $ref: '#/components/responses/403Forbidden'
+        "406":
+          $ref: '#/components/responses/406NotAcceptable'
+        "415":
+          $ref: '#/components/responses/415UnsupportedMediaType' 
+        "429":
+          $ref: '#/components/responses/429TooManyRequests'
+        "default":
+          $ref: '#/components/responses/400BadRequest' 
+    get:
+      summary: get the customer
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: OK
+        "401":
+          $ref: '#/components/responses/401Unauthorized'
+        "403":
+          $ref: '#/components/responses/403Forbidden'
+        "406":
+          $ref: '#/components/responses/406NotAcceptable'
+        "415":
+          $ref: '#/components/responses/415UnsupportedMediaType' 
+        "429":
+          $ref: '#/components/responses/429TooManyRequests'
+        "default":
+          $ref: '#/components/responses/400BadRequest' 
 
+components:
+
+  examples:
+
+    tooManyRequests:
+      summary: Short description of this example
+      value:
+        code: '429'
+        message: 'Exceeded request limit, x requests per y seconds, re-try in z seconds'
+    tokenNotPresent:
+      summary: jwt token is missing in request
+      value:
+        code: '401-1'
+        message: 'jwt token is missing in request'
+    tokenSignatureInvalid:
+      summary: jwt token is missing in request
+      value:
+        code: '401-2'
+        message: 'Signature validation failed'
+    tokenAudienceNotAllowed:
+      summary: Invalid audience
+      value:
+        code: '401-3'
+        message: 'Invalid audience'
+    tokenIssuerNotAllowed:
+      summary: Invalid issuer
+      value:
+        code: '401-4'
+        message: 'Invalid issuer'
+    tokenExpired:
+      summary: Token expired
+      value:
+        code: '401-5'
+        message: 'Token expired'
+    tokenSignatureKeyNotFound:
+      summary: Token expired
+      value:
+        code: '401-6'
+        message: 'Signature key was not resolved by ID'
+    tokenClaimNotFound:
+      summary: Required claims are missing from token
+      value:
+        code: '401-7'
+        message: 'JWT token is missing the following claims: <c1>, <c2>,..'
+    tokenClaimValueNotAllowed:
+      summary: Claims value mismatch
+      value:
+        code: '401-8'
+        message: 'Claim {claim-name} value of {claim-value} is not allowed.'
+    jwtInvalid:
+      summary: Unspecified JWT error
+      value:
+        code: '401-9'
+        message: 'Unspecified JWT error'
+
+
+  headers:
+    x-fapi-interaction-id:
+      description: This is the Correlation ID ( borrowed from FAPI)
+      schema:
+        type: string
+        format: uuid
+        pattern: '^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$'
+# https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/
+    RateLimit-Limit:
+      description: The number of allowed requests in the current period
+      schema:
+        type: integer
+      example: 100
+    RateLimit-Policy:
+      description: indicates the quota policies currently associated with the client.  Its value is informative.
+      schema:
+        type: string
+        example: '100;w=10'
+    RateLimit-Remaining:
+      description: The number of remaining requests in the current period
+      schema:
+        type: integer
+        example: 94
+    RateLimit-Reset:
+      description: The number of seconds until the quota associated with the expiring-limit resets
+      schema:
+        type: integer
+        example: 94
+
+  responses:
+    400BadRequest: # Can be referenced as '#/components/responses/400BadRequest'
+          description: Bad Request
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/x-fapi-interaction-id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+    401Unauthorized: # Can be referenced as '#/components/responses/401Unauthorized'
+          description: Unauthorized
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/x-fapi-interaction-id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                tokenAudienceNotAllowed:
+                  $ref: '#/components/examples/tokenAudienceNotAllowed'
+                tokenClaimNotFound:
+                  $ref: '#/components/examples/tokenClaimNotFound'
+                tokenClaimValueNotAllowed:
+                  $ref: '#/components/examples/tokenClaimValueNotAllowed'
+                tokenExpired:
+                  $ref: '#/components/examples/tokenExpired'
+                tokenIssuerNotAllowed:
+                  $ref: '#/components/examples/tokenIssuerNotAllowed'
+                jwtInvalid:
+                  $ref: '#/components/examples/jwtInvalid'
+                tokenNotPresent:
+                  $ref: '#/components/examples/tokenNotPresent'
+                tokenSignatureInvalid:
+                  $ref: '#/components/examples/tokenSignatureInvalid'
+                tokenSignatureKeyNotFound:
+                  $ref: '#/components/examples/tokenSignatureKeyNotFound'
+    403Forbidden: # Can be referenced as '#/components/responses/403Forbidden'
+          description: Forbidden
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/x-fapi-interaction-id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+    406NotAcceptable: # Can be referenced as '#/components/responses/406NotAcceptable'
+          description: Not Acceptable
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/x-fapi-interaction-id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+    415UnsupportedMediaType: # Can be referenced as '#/components/responses/415UnsupportedMediaType'
+          description: Unsupported Media Type
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/x-fapi-interaction-id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+    429TooManyRequests: # Can be referenced as '#/components/responses/429TooManyRequets'
+          description: Too Many Requests
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/x-fapi-interaction-id'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimit-Limit'
+            RateLimit-Policy:
+              $ref: '#/components/headers/RateLimit-Policy'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimit-Remaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimit-Reset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                confirmation-success:
+                  $ref: '#/components/examples/tooManyRequests'
+
+  schemas:
+    address:
+      type: object
+      additionalProperties: false
+      properties:
+        addressType:
+          type: string
+          enum:
+            - home
+            - correspondence
+          default: home
+        address1:
+          type: string
+          minLength: 1
+          maxLength: 60
+          pattern: '^(.{1,60})$'
+          example: '41 Main Street'
+        address2:
+          type: string
+          minLength: 1
+          maxLength: 60
+          pattern: '^(.{1,60})$'
+          example: 'Morningside'
+        address3:
+          type: string
+          minLength: 1
+          maxLength: 60
+          pattern: '^(.{1,60})$'
+          example: 'Edinburgh'
+        address4:
+          type: string
+          minLength: 1
+          maxLength: 60
+          pattern: '^(.{1,60})$'
+          example: 'Lothian'
+        postCode:
+          type: string
+          maxLength: 8
+          pattern: '/^[a-z]{1,2}\d[a-z\d]?\s*\d[a-z]{2}$/i;'
+          example: 'EH21 8TF'
+
+    contactPref:
+      type: object
+      description: contact preference
+      additionalProperties: false
+      required:
+        - optIn
+        - channel
+      properties:
+        channel:
+          type: string
+          enum:
+            - email
+            - letter
+            - phone
+            - sms
+        specialReq:
+          type: string
+          enum:
+            - brail
+            - large print        
+
+    credentials:
+      type: object
+      additionalProperties: false
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: Joe
+        password:
+          type: string
+          # https://uibakery.io/regex-library/password
+          pattern: /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/
+          example: JBloggs
+    customerReg:
+      type: object
+      additionalProperties: false
+      required:
+        - firstName
+        - lastName
+        - dob
+        - email
+      properties:
+        firstName:
+          type: string
+          description: Person's Firstname
+          minLength: 2
+          maxLength: 35
+          pattern:
+          x-pii: true
+          example: Joe
+        lastName:
+          type: string
+          description: Person's Lastname
+          minLength: 2
+          maxLength: 35
+          pattern:
+          x-pii: true
+          example: Bloggs
+        dob:
+          type: string
+          description: Person's Date of Birth
+          format: date
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: 1972-11-24
+        email:
+          type: string
+          description: Person's email address. As defined by the "Mailbox" ABNF rule in RFC 5321, section 4.1.2.
+          format: email
+          minLength: 6
+          maxLength: 320
+          pattern: '^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$'
+          x-pii: true
+          example: bloogsj@gmail.com
+        niNum:
+          type: string
+          description: Person's UK National Insurance Number (not a number!)
+          maxLength: 9
+          pattern: '^[A-Z]{2}\d{6}[A-Z]'
+          x-pii: true
+          example: NQ872714C
+    # Schema for error response body
+    error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          maxLength: 4
+          pattern: ^\d{4}
+        message:
+          type: string
+          maxLength: 100
+          pattern: ^(.{1,100})$
+      required:
+        - code
+        - message
+      example:    # simSwap
+        code: 1002
+        message: Sim swap check failed
+
+    marketingPref:
+      description: marketing preference
+      type: object
+      additionalProperties: false
+      required:
+        - optIn
+        - channel
+      properties:
+        optIn:
+          type: boolean
+          default: false
+        channel:
+          type: string
+          enum:
+            - email
+            - letter
+            - phone
+            - sms
+
+    vulnerability:
+      type: object
+      additionalProperties: false
+      required:
+        - classification
+        - details
+      properties:
+        classification:
+          description: capability - low confidence and confidence in managing money/financial matters. This driver includes low capacity in areas such as literacy and numeracy. health - any condition or illness that affects the ability to carry out daily tasks. Life events - these include bereavement, job loss or retirement. Resilience - reduced ability to withstand financial or emotional shock.
+          type: string
+          enum:
+            - Capability
+            - Heath
+            - Life event
+            - Resilience
+        details:
+          type: string
+          description: details of the vulnerability
+          maxLength: 200
+
+    vulnerabilities:
+      type: array
+      items:
+        $ref: '#/components/schemas/vulnerability'
+
+
+  securitySchemes:
+    bearerAuth:            # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: string
+    apiKey:
+      description: API keys are NOT Security https://cloud.google.com/endpoints/docs/openapi/when-why-api-key#:~:text=API%20keys%20are%20generally%20not,revokes%20or%20regenerates%20the%20key. should be used as guidence
+      type: apiKey
+      name: X-API-Key
+      in: header
+   # OauthSecurity:
+    #  type: oauth2
+     # flows: accessCode
+      #authorizationUrl: 'https://oauth.simple.api/authorization'
+      #tokenUrl: 'https://oauth.simple.api/token'
+      #scopes:
+      #  admin: Admin scope
+      #  user: User scope
+      #  media: Media scope
